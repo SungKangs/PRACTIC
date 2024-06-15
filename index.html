@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,13 +22,13 @@
     </header>
    <div class="osnova">
     <label class="start_tim" for="start-time">Начало рабочего дня:</label>
-    <input type="time" id="start-time">
+    <input type="time" id="start-time" required>
 
     <label class="end_tim" for="end-time">Конец смены:</label>
-    <input type="time" id="end-time">
+    <input type="time" id="end-time" required>
 
     <label class="break_tim" for="break-time">Перерыв:</label>
-    <input type="number" id="break-time" placeholder="Введите время перерыва в">
+    <input type="number" id="break-time" placeholder="Введите время перерыва в" min="0" max="120" oninput="this.value = this.value.slice(0,3)">
 
     <button onclick="calculateHours()" class="butt_vich">Вычислить</button>
     <button onclick="resetStatistics()" class="butt_vich">Сбросить статистику</button>
@@ -74,44 +75,51 @@
         </tbody>
     </table>
 
-    <h2>Недельная статистика</h2>
+    <h2>Общая статистика</h2>
     <div id="weekly-stats"></div>
 
     <script>
-        function calculateHours() {
-            const startTime = document.getElementById("start-time").value;
-            const endTime = document.getElementById("end-time").value;
-            const breakTime = parseInt(document.getElementById("break-time").value);
+       function calculateHours() {
+    const startTime = document.getElementById("start-time").value;
+    const endTime = document.getElementById("end-time").value;
+    const breakTime = parseInt(document.getElementById("break-time").value);
 
-            const start = new Date("2000-01-01T" + startTime + ":00Z");
-            const end = new Date("2000-01-01T" + endTime + ":00Z");
+    // Проверка, что начало рабочего дня не больше конца смены
+    if (startTime >= endTime) {
+        alert("Начало рабочего дня не может быть больше конца смены.");
+        return;
+    }
 
-            let diff = (end - start) / 60000; // Разница в минутах
-            diff -= breakTime;
+    // Проверка, что перерыв не больше 120 минут
+    if (breakTime > 120) {
+        alert("Перерыв не может быть больше 120 минут.");
+        return;
+    }
 
-            const hours = Math.floor(diff / 60);
-            const minutes = Math.floor(diff % 60);
+    const start = new Date("2000-01-01T" + startTime + ":00Z");
+    const end = new Date("2000-01-01T" + endTime + ":00Z");
 
-            document.getElementById("total-hours").innerText = `${hours} часов ${minutes} минут`;
+    let diff = (end - start) / 60000; // Разница в минутах
+    diff -= breakTime;
 
-            // Получаем текущую неделю года
-            const currentWeekNumber = getWeekNumber(new Date());
+    const hours = Math.floor(diff / 60);
+    const minutes = Math.floor(diff % 60);
 
-            // Сохраняем время в локальное хранилище для текущего дня
-            const today = new Date();
-            const dayOfWeek = today.getDay(); // 0 - воскресенье, 6 - суббота
-            const dayName = getWeekDayName(dayOfWeek);
-            const currentDayTime = localStorage.getItem(dayName + '-week-' + currentWeekNumber) || "0 часов 0 минут";
-            const [currentDayHours, currentDayMinutes] = currentDayTime.split(' часов ');
-            const updatedDayHours = parseInt(currentDayHours) + hours;
-            const updatedDayMinutes = parseInt(currentDayMinutes.split(' минут')[0]) + minutes;
+    document.getElementById("total-hours").innerText = `${hours} часов ${minutes} минут`;
 
-            localStorage.setItem(dayName + '-week-' + currentWeekNumber, `${updatedDayHours} часов ${updatedDayMinutes % 60} минут`);
-            document.getElementById(dayName + "-time").innerText = `${updatedDayHours} часов ${updatedDayMinutes % 60} минут`;
+    // Получаем текущую неделю года
+    const currentWeekNumber = getWeekNumber(new Date());
 
-            // Обновляем статистику на странице
-            updateWeeklyStats();
-        }
+    // Сохраняем время в локальное хранилище для текущего дня
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0 - воскресенье, 6 - суббота
+    const dayName = getWeekDayName(dayOfWeek);
+    localStorage.setItem(dayName + '-week-' + currentWeekNumber, `${hours} часов ${minutes} минут`);
+    document.getElementById(dayName + "-time").innerText = `${hours} часов ${minutes} минут`;
+
+    // Обновляем статистику на странице
+    updateWeeklyStats();
+}
 
         function resetStatistics() {
             // Очистка данных из localStorage
@@ -168,18 +176,18 @@
         }
 
         window.onload = () => {
-            document.getElementById("sunday-time").innerText = localStorage.getItem("sunday-time") || "0 часов 0 минут";
-            document.getElementById("monday-time").innerText = localStorage.getItem("monday-time") || "0 часов 0 минут";
-            document.getElementById("tuesday-time").innerText = localStorage.getItem("tuesday-time") || "0 часов 0 минут";
-            document.getElementById("wednesday-time").innerText = localStorage.getItem("wednesday-time") || "0 часов 0 минут";
-            document.getElementById("thursday-time").innerText = localStorage.getItem("thursday-time") || "0 часов 0 минут";
-            document.getElementById("friday-time").innerText = localStorage.getItem("friday-time") || "0 часов 0 минут";
-            document.getElementById("saturday-time").innerText = localStorage.getItem("saturday-time") || "0 часов 0 минут";
+            document.getElementById("sunday-time").innerText = localStorage.getItem("sunday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("monday-time").innerText = localStorage.getItem("monday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("tuesday-time").innerText = localStorage.getItem("tuesday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("wednesday-time").innerText = localStorage.getItem("wednesday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("thursday-time").innerText = localStorage.getItem("thursday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("friday-time").innerText = localStorage.getItem("friday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
+            document.getElementById("saturday-time").innerText = localStorage.getItem("saturday-week-" + getWeekNumber(new Date())) || "0 часов 0 минут";
         };
 
         updateWeeklyStats();
     </script>
-   <style>
+    <style>
         body {
             font-family: 'Teko', sans-serif;
             background-color: #d1dff6;
